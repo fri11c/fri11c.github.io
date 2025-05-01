@@ -1,0 +1,1 @@
+Icl is only supported by the iclBrowser, which is not yet released.
