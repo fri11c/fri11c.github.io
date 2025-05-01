@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <title>Steine</title>
+
+    <style>
+        .slidecontainer {
+            width: 100%;
+        }
+        #slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 25px;
+            background-color: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        #slider:hover {
+            opacity: 1;
+        }
+        #slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 25px;
+            background-color: #00bb9c;
+            cursor: pointer;
+        }
+
+        #underslider {
+            position: relative;
+            height: 125px;
+        }
+        #minsvg {
+            position: absolute;
+            left: 0px;
+        }
+        #maxsvg {
+            position: absolute;
+            right: 0px;
+        }
+
+        #overslider {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #timer {
+            background-color: #0001;
+            height: 100px;
+            font-size: 90px;
+
+            font-family: "Roboto", serif;
+            font-weight: 400;
+            font-style: normal;
+
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        #button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="timer">Start</div>
+    <div id="overslider">
+        <svg id="nowsvg" width="150" height="150" style="background-color: #eee;"></svg>
+    </div>
+    <div class="slidecontainer">
+        <input id="slider" type="range" min="0" max="1" step="0.001" value="0">
+    </div>
+    <div id="underslider">
+        <svg id="minsvg" width="100" height="100" style="background-color: #eee;"></svg>
+        <svg id="maxsvg" width="100" height="100" style="background-color: #eee;"></svg>
+    </div>
+
+    <div id="stat">
+        
+    </div>
+
+    <script>
+        const slider = document.querySelector("#slider");
+
+        slider.addEventListener ("input", function () {
+        });
+        var maxsvg = document.getElementById("maxsvg");
+        var maxsvgwidth = maxsvg.getAttribute("width");
+        var maxsvgheight = maxsvg.getAttribute("height");
+        var numMaxPntsX = 6;
+        var numMaxPntsY = 5;
+        var numMaxPnt = numMaxPntsX * numMaxPntsY;
+        for(var x = 0; x < numMaxPntsX; x++) {
+            for(var y = 0; y < numMaxPntsY; y++) {
+                maxsvg.innerHTML += `
+                    <circle cx="${ x * maxsvgwidth / numMaxPntsX + Math.random() * (maxsvgwidth / numMaxPntsX - 8) + 4 }" 
+                    cy="${ y * maxsvgheight / numMaxPntsY + Math.random() * (maxsvgheight / numMaxPntsY - 8) + 4 }" r="4" stroke="black" stroke-width="1.5" fill="#00bb9c" />
+                `
+            }
+        }
+
+        var time = 6;
+        var doneyet = [];
+        var values = [];
+        var inter = setInterval(function() {
+            time--;
+            //pause
+            if(time == 6 || time == 7) {
+                document.getElementById("nowsvg").innerHTML = "";
+                document.getElementById("timer").innerHTML = "";
+            }
+            //count down 
+            else {
+                document.getElementById("timer").innerHTML = time;
+            }
+            //nachbereitung
+            if(time == 0) {
+                time = 8;
+                console.log("slider: " + slider.value);
+                values.push(slider.value);
+
+                //wenn man mit allem durch ist
+                if(doneyet.length == numMaxPnt) {
+                    document.getElementById("nowsvg").innerHTML = "";
+                    document.getElementById("timer").innerHTML = "Danke";
+
+                    clearInterval(inter);
+
+                    //print
+                    for(var i = 0; i < doneyet.length; i++) {
+                        console.log(values[i] + " " + doneyet[i]);
+                    }
+
+                    var stat = document.getElementById("stat");
+                    stat.innerHTML = "<svg id='statsvg' width='400' height='300' style='background-color: #eee;'>";
+                    var statsvg = document.getElementById("statsvg");
+                    
+                    statsvg.innerHTML += "<line x1='0' y1='300' x2='400' y2='0' stroke='#888'/>"
+                    
+                    var ybefore = 0;
+                    for(var i = 0; i < numMaxPnt; i++) {
+                        var index = doneyet.indexOf(i + 1);
+                        var y = values[index];
+                        statsvg.innerHTML += `
+                            <line x1='${ i * 400 / numMaxPnt }' y1='${ 300 - ybefore * 300}' 
+                            x2='${ (i + 1) * 400 / numMaxPnt }' y2='${ 300 - y * 300 }' stroke='#000'/>
+                        `;
+                        ybefore = y;
+                    }
+                }
+            }
+            //vorbereitung
+            if(time == 5) {
+                var i = 0;
+                var isDa = true;
+                while(isDa) {
+                    i = Math.floor(Math.random() * numMaxPnt) + 1;
+                    isDa = false;
+                    doneyet.forEach(num => {
+                        if(num == i) {
+                            isDa = true;
+                        }
+                    });
+                }
+                doneyet.push(i);
+                
+                var nowsvg = document.getElementById("nowsvg");
+                var nowsvgwidth = nowsvg.getAttribute("width");
+                var nowsvgheight = nowsvg.getAttribute("height");
+                var numNowPntsX = Math.ceil(Math.sqrt(i));
+                var numNowPntsY = numNowPntsX;
+                nowsvg.innerHTML = "";
+                for(var x = 0; x < numNowPntsX; x++) {
+                    for(var y = 0; y < numNowPntsY; y++) {
+                        if(x * numNowPntsY + y < i) {
+                            nowsvg.innerHTML += `
+                                <circle cx="${ x * nowsvgwidth / numNowPntsX + Math.random() * (nowsvgwidth / numNowPntsX - 8) + 4 }" 
+                                cy="${ y * nowsvgheight / numNowPntsY + Math.random() * (nowsvgheight / numNowPntsY - 8) + 4 }" r="4" stroke="black" stroke-width="1.5" fill="#00bb9c" />
+                            `
+                        }
+                    }
+                }
+                console.log(i);
+            }
+        }, 1000)
+    </script>
+</body>
+</html>
