@@ -1,4 +1,4 @@
-const SIZE = 750;// = Math.min(windowWidth, windowHeight);
+const SIZE = 500;// = Math.min(windowWidth, windowHeight);
 const DESTROYING_TIME = 250;
 
 const LONG_WORDS = [
@@ -17,10 +17,10 @@ const WORD_TYPES = {
 
 let next_words = [];
 
-const FALLING_SPEED = 0.04; //px/ms
+let FALLING_SPEED = 0.007; //px/ms
 const SHOW_TIME = 1000; //ms
-const SECOUND_SHOW_TIME = 750; //ms
-const DOWN_TIME = 500; //ms
+const SECOUND_SHOW_TIME = 500; //ms
+let DOWN_TIME = 500; //ms
 
 class Word {
     constructor(type, words) {
@@ -29,7 +29,7 @@ class Word {
         if(type == WORD_TYPES.LETTER) {
             this.text = String.fromCharCode(Math.floor(Math.random() * 26) + 97);
         }
-        if(type & WORD_TYPES.VERY_LONG != 0) {
+        if((type & WORD_TYPES.VERY_LONG) != 0) {
             this.text = LONG_WORDS[Math.floor(Math.random() * LONG_WORDS.length)].toLowerCase();
         }
         else if(type != WORD_TYPES.LETTER) {
@@ -43,21 +43,19 @@ class Word {
         this.textWidth = textWidth(str(this.text));
         
         this.x = Math.random() * (SIZE - this.textWidth);
+        //check if the word is in another words
+        for(let i = 0; i < words.length; i++) {
+            let word = words[i];
+            if(this.x + this.textWidth > word.x && this.x < word.x + this.textWidth) {
+                this.x = Math.random() * (SIZE - this.textWidth);
+                i = -1;
+            }
+        }
         if(type == WORD_TYPES.LETTER) {
-            this.x = SIZE / 2 - this.textWidth / 2;
             this.y = 0;
         }
         if(type % 2 == WORD_TYPES.FALLING) {
             this.y = 0;
-        
-            //check if the word is in another words
-            for(let i = 0; i < words.length; i++) {
-                let word = words[i];
-                if(this.x + this.textWidth > word.x && this.x < word.x + this.textWidth) {
-                    this.x = Math.random() * (SIZE - this.textWidth);
-                    i = -1;
-                }
-            }
         }
         else if(type % 2 == WORD_TYPES.STANDING) {
             this.y = Math.random() * (SIZE / 3) + SIZE / 3;
@@ -66,7 +64,7 @@ class Word {
         this.destroyingTimer = -1;
         this.showingTimer = SHOW_TIME
 
-        this.value = 64;
+        this.value = (this.type == WORD_TYPES.LETTER)? 2 : 64;
     }
     
     update(deltaTime) {
@@ -87,6 +85,9 @@ class Word {
 
             this.x += dirx * FALLING_SPEED * deltaTime;
             this.y += diry * FALLING_SPEED * deltaTime;
+        }
+        if(this.type % 2 == WORD_TYPES.STANDING) {
+            this.x += Math.sin(millis() / 1000) * 0.06 * deltaTime;
         }
     }
 
@@ -119,17 +120,43 @@ class Word {
 let words = [];
 
 class State {
-    constructor(word_types, next_state) {
+    constructor(word_types, next_state, veldowm = false) {
         this.word_types = word_types;
         this.next_state = next_state;
+        this.veldowm = veldowm;
     }
 }
 
 const STATES = [
-    new State([WORD_TYPES.FALLING], 1),
-    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 1),
+    new State([], 1), //first
+    new State([WORD_TYPES.FALLING, WORD_TYPES.STANDING], 2),
     new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING], 3),
-    new State([WORD_TYPES.LONG | WORD_TYPES.STANDING, WORD_TYPES.FALLING], 0),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.LONG], 4),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.STANDING | WORD_TYPES.VERY_LONG], 5),
+    new State([WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER, 
+        WORD_TYPES.LETTER, WORD_TYPES.LETTER,], 6, true),
+
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING], 7),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 8),
+    new State([WORD_TYPES.FALLING | WORD_TYPES.LONG, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 9),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 10),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.STANDING | WORD_TYPES.LONG], 11),
+    new State([WORD_TYPES.STANDING | WORD_TYPES.VERY_LONG, WORD_TYPES.STANDING | 
+        WORD_TYPES.VERY_LONG | WORD_TYPES.FLIP], 12),
+    new State([WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER, 
+        WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER,], 13, true),
+            
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 14),
+    new State([WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 15),
+    new State([WORD_TYPES.FALLING | WORD_TYPES.FLIP, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 16),
+    new State([WORD_TYPES.FALLING | WORD_TYPES.LONG, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 17),
+    new State([WORD_TYPES.STANDING, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 18),
+    new State([WORD_TYPES.FALLING | WORD_TYPES.FLIP, WORD_TYPES.FALLING | WORD_TYPES.FLIP], 19),
+    new State([WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER, 
+        WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER, WORD_TYPES.LETTER,], 20, true),
+            
+    new State([WORD_TYPES.VERY_LONG | WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.LONG], 21),
+    new State([WORD_TYPES.VERY_LONG | WORD_TYPES.FALLING, WORD_TYPES.FALLING | WORD_TYPES.LONG], 6),
 ];
 
 function newState() {
@@ -142,7 +169,7 @@ function newState() {
     xhr.onload = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
             const data = xhr.response;
-            console.log(data);
+            // console.log(data);
             next_words = data.map(word => word.toLowerCase());
 
             words = [];
@@ -155,6 +182,16 @@ function newState() {
         }
         
     };
+
+    FALLING_SPEED += 0.002;
+    if(STATES[state].veldowm) {
+        FALLING_SPEED -= 0.007;
+        console.log("Div:");
+    }
+    console.log(state, FALLING_SPEED);
+    if(FALLING_SPEED > 1) FALLING_SPEED = 1;
+    DOWN_TIME -= 10;
+    if(DOWN_TIME < 100) DOWN_TIME = 100;
 }
 
 const GAME_STATE = {
@@ -199,15 +236,15 @@ class Rocket {
                     destroySomething = true;
                     word.cur_index++;
                     this.lastWordIndex.push(i);
-                    if(word.cur_index >= word.text.length) {
-                        this.nextWordDestroy.push(true);
-                    }
+                    this.nextWordDestroy.push(word.cur_index >= word.text.length);
                     this.letterOld = this.letter;
 
                     this.destroyingTimer = DESTROYING_TIME;
                     word.destroyingTimer = DESTROYING_TIME;
                     this.destroyLineX.push(word.x + textWidth(word.text.substring(0, word.cur_index - 1)) + textWidth(word.text[word.cur_index - 1]) / 2);
                     this.destroyLineY.push(word.y - 1 + (textAscent() + textDescent()));
+                
+                    if(word.cur_index >= word.text.length) this.score += word.value;
                 }
             }
             if(destroySomething) {
@@ -237,19 +274,17 @@ class Rocket {
             }
         }
 
+        let numAlreadyDestroyedObj = 0;
         if(this.destroyingTimer < 0) {
-
             for(let i = 0; i < this.nextWordDestroy.length; i++) {
                 if(this.nextWordDestroy[i]) {
+                    words.splice(this.lastWordIndex[i] - numAlreadyDestroyedObj, 1);
+                    numAlreadyDestroyedObj++;
+                    
                     //spane letter
                     if(Math.random() < 0.33) {
                         words.push(new Word(WORD_TYPES.LETTER, words));
-                        print("a");
                     }
-
-                    this.score += words[this.lastWordIndex[i]].value;
-                    words.splice(this.lastWordIndex[i], 1);
-                    
                     
                     if(words.length == 0) {
                         newState();
@@ -325,10 +360,11 @@ function setup() {
         if(event.key === 'Enter' && game_state == GAME_STATE.PLAYING) {
             rocket.letter = '';
             rocket.letterOld = '';
+            rocket.destroyingTimer = -1;
 
             for(let i = 0; i < words.length; i++) {
-                words[i].showingTimer = SECOUND_SHOW_TIME;
-                rocket.destroyingTimer = -1;
+                if(words[i].type == WORD_TYPES.LETTER) continue;
+                words[i].showingTimer = SECOUND_SHOW_TIME * ((words[i].type & WORD_TYPES.FLIP)? 1.5 : 1);
                 words[i].destroyingTimer = -1;
                 words[i].cur_index = 0;
 
@@ -344,6 +380,9 @@ function setup() {
             rocket = new Rocket();
             state = 0;
             words = [];
+            
+            DOWN_TIME = 500;
+            FALLING_SPEED = 0.007;
 
             newState();
         }
