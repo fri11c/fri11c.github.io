@@ -1,4 +1,4 @@
-const SIZE = 500;// = Math.min(windowWidth, windowHeight);
+let SIZE = 500;// = Math.min(windowWidth, windowHeight);
 const DESTROYING_TIME = 250;
 
 const LONG_WORDS = [
@@ -17,7 +17,7 @@ const WORD_TYPES = {
 
 let next_words = [];
 
-let FALLING_SPEED = 0.007; //px/ms
+let FALLING_SPEED = 0.00105; //px/ms
 const SHOW_TIME = 1000; //ms
 const SECOUND_SHOW_TIME = 500; //ms
 let DOWN_TIME = 500; //ms
@@ -52,10 +52,10 @@ class Word {
             }
         }
         if(type == WORD_TYPES.LETTER) {
-            this.y = 0;
+            this.y = SIZE / 10 - SIZE / 25;
         }
         if(type % 2 == WORD_TYPES.FALLING) {
-            this.y = 0;
+            this.y = SIZE / 10 - SIZE / 25;
         }
         else if(type % 2 == WORD_TYPES.STANDING) {
             this.y = Math.random() * (SIZE / 3) + SIZE / 3;
@@ -169,7 +169,6 @@ function newState() {
     xhr.onload = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
             const data = xhr.response;
-            // console.log(data);
             next_words = data.map(word => word.toLowerCase());
 
             words = [];
@@ -183,12 +182,10 @@ function newState() {
         
     };
 
-    FALLING_SPEED += 0.002;
+    FALLING_SPEED += 0.003;
     if(STATES[state].veldowm) {
-        FALLING_SPEED -= 0.007;
-        console.log("Div:");
+        FALLING_SPEED -= 0.00105;
     }
-    console.log(state, FALLING_SPEED);
     if(FALLING_SPEED > 1) FALLING_SPEED = 1;
     DOWN_TIME -= 10;
     if(DOWN_TIME < 100) DOWN_TIME = 100;
@@ -270,6 +267,7 @@ class Rocket {
                 this.lives--;
                 if(this.lives <= 0) {
                     game_state = GAME_STATE.GAME_OVER;
+                    this.downTimer = -1;
                 }
             }
         }
@@ -305,8 +303,10 @@ class Rocket {
         rect(this.x, this.y, this.SIZE, this.SIZE);
 
         if(this.downTimer > 0) {
-            fill(255, 0, 0, (this.downTimer / DOWN_TIME) * 255);
-            rect(this.x, this.y, this.SIZE, this.SIZE);
+            //fill(255, 0, 0, (this.downTimer / DOWN_TIME) * 255);
+            //rect(this.x, this.y, this.SIZE, this.SIZE);
+            fill(255, 0, 0, (this.downTimer / DOWN_TIME) * 50 + 100);
+            rect(0, 0, SIZE, SIZE);
         }
 
         fill(0);
@@ -320,21 +320,24 @@ class Rocket {
                 line(this.x + this.SIZE / 2, this.y - 1, this.destroyLineX[i], this.destroyLineY[i]);
             }
         }
+        
+        noStroke(0);
+        fill(0, 0, 0, 200);
+        rect(0, 0, SIZE,  SIZE / 10 - SIZE / 25);
 
         fill(255);
-        noStroke(0);
-        textAlign(LEFT, TOP);
-        text(this.score, 16, 16)
+        textAlign(LEFT, CENTER);
+        text(this.score, SIZE / 20 - SIZE / 25, SIZE / 20 - SIZE / 50)
 
+        fill(255, 0, 0);
         for(let i = 0; i < this.lives; i++) {
-            fill(255, 0, 0);
             rect(SIZE - SIZE / 20 * (i + 1), SIZE / 20 - SIZE / 25, SIZE / 25, SIZE / 25);
         }
 
     }
 }
 
-let rocket = new Rocket();
+let rocket;
 let state = 0;
 
 let lastmillis = 0;
@@ -344,12 +347,15 @@ function preload() {
 }
 
 function setup() {
+    SIZE = 750;
     createCanvas(SIZE,SIZE);
 
     angleMode(DEGREES);
 
     textFont('Arial', SIZE / 30);
     textAlign(CENTER, CENTER);
+
+    rocket = new Rocket();
 
     document.addEventListener('keypress', (event) => {
         if(event.key.length === 1 && game_state == GAME_STATE.PLAYING) {
